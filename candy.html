@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>candy</title>
+	<!-- Favicon -->
+	<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  
+	<style>
+    body { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      background: #fffaf0;
+      font-family: sans-serif;
+      flex-direction: column;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 70px);
+      gap: 12px;
+    }
+    .bean {
+      width: 60px;
+      height: 40px;
+      /* 不規則な丸み */
+      border-radius: 60% 40% 70% 30% / 40% 70% 30% 60%;
+      /*background-size: cover;*/
+			-webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.3s;
+      box-shadow: inset -3px -3px 6px rgba(0,0,0,0.15),
+      						2px 2px 5px rgba(0,0,0,0.25);
+    }
+    .popped {
+      transform: scale(0.8);
+      opacity: 0.6;
+      box-shadow: none;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: #333;
+    }
+		/* 押したときのアニメーション */
+		@keyframes spinPop {
+  		0% {
+    			transform: scale(1) rotate(0deg);
+    			opacity: 1;
+  		}
+  		70% {
+    			transform: scale(1.2) rotate(360deg);
+    			opacity: 1;
+  		}
+  		100% {
+    			transform: scale(0) rotate(720deg);
+    			opacity: 0;
+  		}
+		}
+
+		.bean.popped {
+  			animation: spinPop 0.6s ease-out forwards;
+  			box-shadow: none;
+		}
+
+		.particle {
+  			position: absolute;
+  			width: 10px;
+  			height: 10px;
+  			border-radius: 50%;
+  			pointer-events: none;
+		}
+
+		/*フルーツシャワー*/
+		@keyframes fruitBurst {
+  		0% {
+    			transform: translate(0, 0) scale(0.8) rotate(0deg); /* 小さく準備 */
+    			opacity: 1;
+  				}
+  		100% {
+    			transform: translate(var(--x), var(--y)) scale(1) rotate(720deg); /* 一気に飛び散る */
+    			opacity: 0;
+  				}
+		}	
+		.fruit-piece {
+  				position: absolute;
+  				width: 32px;
+  				height: 32px;
+  				background-size: cover;
+  				pointer-events: none;
+  				animation: fruitBurst 1.5s ease-out forwards;
+		}
+
+		/* 下中央のメニューバー */
+		#menu-bar {
+  				display: flex;
+  				gap: 12px;
+  				justify-content: center;
+  				align-items: center;
+  				padding: 10px;
+  				background: rgba(0,0,0,0.5);
+  				border-radius: 12px;
+  				/*position: fixed;
+  				bottom: 20px;
+  				left: 50%;
+  				transform: translateX(-50%);*/
+  				opacity: 0;
+  				transition: opacity 1s ease;
+					position: relative;   /* fixed・absolute をやめる */
+  				width: fit-content;   /* 中身に合わせる */
+					margin: 20px auto 0;  /* 中央寄せ */
+  				text-align: center;
+		}
+		#menu-bar.show {
+  				opacity: 0.8;
+		}
+		#menu-bar button {
+  				padding: 8px 14px;
+  				border: none;
+  				border-radius: 8px;
+  				background: #fff;
+  				font-size: 1em;
+  				cursor: pointer;
+					-webkit-tap-highlight-color: transparent;
+		}
+		/* フェードアウト用 */
+		.fade-out {
+  				opacity: 0;
+  				transition: opacity 1s;
+		}
+
+		/* レスポンシブ */
+		@media (max-width: 600px) {
+  		.grid {
+    			grid-template-columns: repeat(4, 60px); /* 少し小さめ */
+    			gap: 8px; /* 間隔も狭める */
+  		}
+  		.bean {
+    			width: 52px;
+    			height: 36px; /* 押しやすさをキープ */
+  		}
+		}
+
+  </style>
+</head>
+<body>
+  <div class="grid" id="grid"></div>
+  <div id="message"></div>
+	
+	<div id="menu-bar">
+  <button id="restart-btn">↻ もう一回！</button>
+  <button id="menu-btn">⌂ メニューへ</button>
+	</div>
+
+  <audio id="pop-sound" src="puchi42.mp3"></audio>
+	<audio id="special-sound" src="puchi41.mp3"></audio>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const message = document.getElementById('message');
+    const sound = document.getElementById('pop-sound');
+		const specialSound = document.getElementById('special-sound');
+    const totalBeans = 16;
+
+		const restartBtn = document.getElementById("restart-btn");
+		const menuBtn = document.getElementById("menu-btn");
+
+		const events = ["click", "touchend"];
+		// restartBtn に対して
+		events.forEach(evt => {
+  		restartBtn.addEventListener(evt, () => window.location.reload());
+		});
+		// menuBtn に対して
+		events.forEach(evt => {
+  		menuBtn.addEventListener(evt, () => window.location.href = "index.html");
+		});
+
+    // パステル調のカラーバリエーション
+    const colors = [
+      "linear-gradient(45deg, #ffcccc, #ff9999)", // ピンク
+      "linear-gradient(45deg, #ccffcc, #99ff99)", // 緑
+      "linear-gradient(45deg, #ccccff, #9999ff)", // 青
+      "linear-gradient(45deg, #fff5cc, #ffdd99)", // 黄
+      "linear-gradient(45deg, #ffd9cc, #ffb399)"  // オレンジ
+    ];
+
+		// ぷち生成
+		for (let i = 0; i < totalBeans; i++) {
+  		const bean = document.createElement('div');
+  		bean.classList.add('bean');
+
+  	// ランダムな色を設定
+  		const randomColor = colors[Math.floor(Math.random() * colors.length)];
+  		bean.style.background = randomColor;
+
+  	// クリック／タッチで潰れる処理
+  		const popBean = (e) => {
+    		/*if (e.type === 'touchstart') {
+      		e.preventDefault(); // タップ後のclick発火を防ぐ
+    		}*/
+
+    		if (!bean.classList.contains('popped')) {
+      		bean.classList.add('popped');
+
+    		// 残りの未プチ要素をチェック
+      		const remaining = document.querySelectorAll('.bean:not(.popped)').length;
+
+      	if (remaining === 0) {
+        // 最後の1個  フルーツ飛ばす & 特別音
+        	specialSound.currentTime = 0;
+        	specialSound.play();
+				// プチの中央
+        	const rect = bean.getBoundingClientRect();
+        	const startX = rect.left + rect.width / 2;
+        	const startY = rect.top + rect.height / 2;
+
+        	createFruitShower(document.body, ["orange.png", "suika.png", "lemon.png", "kodama.png"], startX, startY);
+        	message.textContent = "フルーツシャワー！🍊🍉✨";
+
+        // 3秒後にメッセージをフェードアウト
+        	setTimeout(() => {
+          	message.classList.add("fade-out");
+				// さらに1秒後にメニューバー表示
+          	setTimeout(() => {
+            	document.getElementById("menu-bar").classList.add("show");
+          		}, 1000);
+        		}, 3000);
+
+      		} else {
+        // 通常 カラフル丸粒 & 普通の音　special=falseは拡張用
+        		sound.currentTime = 0;
+        		sound.play();
+        		const rect = bean.getBoundingClientRect();
+        		createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, false);
+      			}
+    			}
+  			};
+
+  		bean.addEventListener('click', popBean);
+  		bean.addEventListener('touchend', popBean);
+  		grid.appendChild(bean);
+		}
+
+		function createParticles(x, y, special = false) {
+  		const pcolors = ["#ff7f7f", "#7fbfff", "#7fff7f", "#fff27f", "#ff7fff"];
+  		
+  		for (let i = 0; i < 6; i++) {
+    		const particle = document.createElement("div");
+				particle.classList.add("particle");
+    		particle.style.left = x + "px";
+    		particle.style.top = y + "px";			
+      	particle.style.background = pcolors[Math.floor(Math.random() * pcolors.length)];
+
+   		// ランダム方向に飛ばす
+    		const angle = Math.random() * 2 * Math.PI;
+    		const distance = 40 + Math.random() * 20;
+    		const dx = Math.cos(angle) * distance;
+    		const dy = Math.sin(angle) * distance;
+
+    		particle.style.transform = `translate(${dx}px, ${dy}px)`;
+    		particle.style.transition = "transform 0.6s ease-out, opacity 0.6s ease-out";
+    		document.body.appendChild(particle);
+
+    	// 終了後に削除
+    		setTimeout(() => {
+      	particle.style.opacity = "0";
+      	setTimeout(() => particle.remove(), 600);
+    		}, 0);
+  		}
+		}
+
+		function createFruitShower(container, fruitImages, startX, startY) {
+  		for (let i = 0; i < 25; i++) {
+    		const piece = document.createElement("div");
+    		piece.className = "fruit-piece";
+
+    	// ランダムフルーツ
+    		const img = fruitImages[Math.floor(Math.random() * fruitImages.length)];
+    		piece.style.backgroundImage = `url(${img})`;
+
+			// 初期位置をクリック位置にセット
+    		piece.style.left = startX + "px";
+    		piece.style.top = startY + "px";
+
+    	// ランダム飛散方向
+    		const angle = Math.random() * 2 * Math.PI;
+    		const distance = 300 + Math.random() * 300; // 300〜600px
+    		const x = Math.cos(angle) * distance;
+    		const y = Math.sin(angle) * distance;
+
+    		piece.style.setProperty("--x", `${x}px`);
+    		piece.style.setProperty("--y", `${y}px`);
+
+    	// ランダムディレイ
+    		piece.style.animationDelay = `${Math.random()}s`;
+
+    		container.appendChild(piece);
+
+    	// 終了後に削除
+    		setTimeout(() => piece.remove(), 3000);
+  		}
+		}
+		
+  </script>
+</body>
+<footer style="text-align:center; margin-top:40px; padding:10px; font-size:0.9em; color:#aaa;">
+  &copy; 2025 Choco's candy<span style="opacity:0.4;">🍬</span>
+</footer>
+</html>

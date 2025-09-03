@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>clover</title>
+	<!-- Favicon -->
+	<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+  <style>
+    body { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      background: linear-gradient(to bottom, #001028, #00334d); /* 夜色スタート */
+      font-family: sans-serif;
+      flex-direction: column;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 60px);
+      gap: 10px;
+    }    
+		.bubble {
+  		width: 60px;
+  		height: 60px;
+  		border-radius: 50%;
+  		background: radial-gradient(circle at 30% 30%,
+    	rgba(255, 255, 255, 0.9),
+    	rgba(180, 200, 255, 0.25));/*0.15*/
+			-webkit-backdrop-filter: blur(2px);	
+			backdrop-filter: blur(2px); /* 透明感アップ（対応ブラウザで） */
+			-webkit-tap-highlight-color: transparent;
+  		box-shadow:
+    	inset -3px -3px 6px rgba(255,255,255,0.6), /* 上から光 */
+    	3px 3px 6px rgba(0,0,0,0.4);              /* 下に影 */
+			cursor: pointer;
+  		transition: transform 0.2s, opacity 0.3s;			
+		}
+    .popped {
+      background:transparent;
+      box-shadow: none;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: #333;
+    }
+		
+		.splash {
+  		position: absolute;
+			background: radial-gradient(circle, rgba(173, 216, 230, 0.9), rgba(173, 216, 230, 0));
+  		border-radius: 50%;
+			pointer-events: none;
+  		animation: splashMove 1.2s ease-out forwards;
+		} 
+		/* 放物線っぽく上がって落ちる */
+		@keyframes splashMove {
+  		0% {
+    			transform: translate(0, 0) scale(1);
+    			opacity: 1;
+  			}
+  		30% {
+    			transform: translate(calc(var(--x) * 0.6), calc(var(--y) * 0.3)) scale(1.35);
+    			opacity: 0.9; /*40%*/
+  			}
+  		100% {
+    			transform: translate(var(--x), var(--y)) scale(0.7);
+    			opacity: 0;
+  			}
+		}
+
+		/* 最後のキラッのスタイル */
+		.shine {
+  				position: absolute;
+  				width: 30px;
+  				height: 30px;
+  				pointer-events: none;
+  				background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, transparent 70%);
+  				border-radius: 50%;
+  				opacity: 0;
+  				transform: scale(0.5);
+  				animation: shineEffect 1s ease-out forwards;
+		}
+		@keyframes shineEffect {
+  		0% {
+    			opacity: 0.8;
+    			transform: scale(0.5);
+  			}
+  		50% {
+    			opacity: 1;
+    			transform: scale(1.5);
+  			}
+  		100% {
+    			opacity: 0;
+    			transform: scale(0);
+  			}
+		}
+
+		/* 下中央のメニューバー */
+		#menu-bar {
+  				display: flex;
+  				gap: 12px;
+  				justify-content: center;
+  				align-items: center;
+  				padding: 10px;
+  				background: rgba(0,0,0,0.5);
+  				border-radius: 12px;
+  				/*position: fixed;*/
+  				/*bottom: 20px;*/
+  				/*left: 50%;
+  				transform: translateX(-50%);*/
+  				opacity: 0;
+  				transition: opacity 1s ease;
+					position: relative;   /* fixed ・ absolute をやめる */
+  				width: fit-content;   /* 中身に合わせる */
+					margin: 20px auto 0;  /* 中央寄せ */
+  				text-align: center;
+		}
+		#menu-bar.show {
+  				opacity: 0.8;
+		}
+		#menu-bar button {
+  				padding: 8px 14px;
+  				border: none;
+  				border-radius: 8px;
+  				background: #fff;
+  				font-size: 1em;
+  				cursor: pointer;
+					-webkit-tap-highlight-color: transparent;
+		}
+		/* フェードアウト用 */
+		.fade-out {
+  				opacity: 0;
+  				transition: opacity 1s;
+		}
+
+		/* レスポンシブ　*/
+		@media (max-width: 600px) {
+  		.grid {
+    			grid-template-columns: repeat(4, 54px);
+    			gap: 8px;
+  		}
+  		.bubble {
+    			width: 54px;
+    			height: 54px; /* 正方形を維持 */
+  		}
+		}
+
+  </style>
+</head>
+<body>
+  <div class="grid" id="grid"></div>
+  <div id="message"></div>
+
+	<div id="menu-bar">
+  <button id="restart-btn">↻ もう一回！</button>
+  <button id="menu-btn">⌂ メニューへ</button>
+	</div>
+
+  <!-- 効果音ファイルを読み込み -->
+  <audio id="pop-sound" src="Water_01.mp3"></audio>
+	<audio id="special-sound" src="Water_02.mp3"></audio>
+	<audio id="final-sound" src="Water_High.mp3"></audio>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const message = document.getElementById('message');
+    const sound = document.getElementById('pop-sound');
+		const specialSound = document.getElementById('special-sound');
+		const finalSound = document.getElementById('final-sound');
+		const totalBubbles = 16;
+
+		const restartBtn = document.getElementById("restart-btn");
+		const menuBtn = document.getElementById("menu-btn");
+
+		const events = ["click", "touchend"];
+		// restartBtn に対して
+		events.forEach(evt => {
+  		restartBtn.addEventListener(evt, () => window.location.reload());
+			});
+		// menuBtn に対して
+		events.forEach(evt => {
+  		menuBtn.addEventListener(evt, () => window.location.href = "index.html");
+			});
+
+		const images = ["mitsuba.png", "shiro.png", "lady.png"];
+		const fourLeaf = "yotsuba.png";
+		const bubbles = [];
+		// 夜の濃紺（CSSと一致させる）
+		const startTop    = { r: 0,  g: 16,  b: 40 };  // #001028
+		const startBottom = { r: 0,  g: 51,  b: 77 };  // #00334d
+
+		let currentTop    = { ...startTop };
+		let currentBottom = { ...startBottom };
+		// 朝の水色（グラデーション上空と地平線で別にしておくと自然）
+		const endTop    = { r: 179, g: 229, b: 255 };  // 上空（水色）
+		const endBottom = { r: 255, g: 255, b: 255 };  // 地平線（白に近い）
+
+		// ぷち生成
+    for (let i = 0; i < totalBubbles; i++) {
+      const bubble = document.createElement('div');
+      bubble.classList.add('bubble');
+
+			// ランダムな三つ葉系
+  		const randomImage = images[Math.floor(Math.random() * images.length)];
+  		bubble.style.backgroundImage = `url(${randomImage})`;
+  		bubble.style.backgroundSize = "cover";
+
+			// クリック・タッチで潰れる処理
+  		const popBubble = (e) => {
+    		/*if (e.type === 'touchstart') {
+      		e.preventDefault(); // タップ後のclick発火を防ぐ
+    		}*/
+
+    		if (!bubble.classList.contains('popped')) {
+      		bubble.classList.add('popped');
+
+						// 背景更新
+					updateBackground();
+
+					// ★ 四つ葉なら特別サウンド
+    			if (bubble.classList.contains('four-leaf')) {
+      			specialSound.currentTime = 0;
+      			specialSound.play();
+    				} else {
+      			sound.currentTime = 0;
+      			sound.play();
+    				}
+						// バブルの位置に水しぶき追加
+    				const rect = bubble.getBoundingClientRect();
+    				createSplash(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+          	checkWin(bubble);
+						}
+					};
+
+  		bubble.addEventListener('click', popBubble);
+  		bubble.addEventListener('touchend', popBubble);
+  		grid.appendChild(bubble);
+			bubbles.push(bubble);
+		}
+		// 70%の確率で四つ葉を 1個だけ出す
+		if (Math.random() < 0.70) {
+  		const luckyBubble = bubbles[Math.floor(Math.random() * bubbles.length)];
+  		luckyBubble.style.backgroundImage = `url(${fourLeaf})`;
+  		luckyBubble.classList.add('four-leaf');
+		}
+		
+		// グリッド上の隣接するインデックスを返す関数
+		function getNeighbors(index, cols, total) {
+  		const neighbors = [index]; // 自分
+			// 左（左端じゃなければ）
+  		if (index % cols !== 0) {
+    			neighbors.push(index - 1);
+  		}
+			// 右（右端じゃなければ）
+  		if (index % cols !== cols - 1) {
+    			neighbors.push(index + 1);
+  		}
+			// 上（範囲内なら）
+  		if (index - cols >= 0) {
+    			neighbors.push(index - cols);
+  		}
+			// 下（範囲内なら）
+  		if (index + cols < total) {
+    			neighbors.push(index + cols);
+  		}
+			return neighbors;
+		}
+
+		//最後のキラッを出す
+		function checkWin(lastBubble) {
+			const popped = bubbles.every(b => b.classList.contains('popped'));
+  		if (popped) {
+    		message.textContent = "朝露、きらりーん！✨";
+			// 最後の音を再生
+    		finalSound.currentTime = 0;
+    		finalSound.play();
+    	// 最後に押したバブルのインデックスを取得
+				const index = bubbles.indexOf(lastBubble);
+    		const cols = 4; // グリッド列数（ここはCSSと合わせる）
+				const totalBubbles = bubbles.length;
+				const neighbors = getNeighbors(index, cols, totalBubbles);
+
+				for (const i of neighbors) {
+  				if (i >= 0 && i < totalBubbles) {
+    					const bubble = bubbles[i];          
+    					const rect = bubble.getBoundingClientRect();
+    					createShine(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  				}
+				}
+				// ここでメッセージを消してメニューバーを出す
+    		setTimeout(() => {
+      		message.classList.add("fade-out");
+      	setTimeout(() => {
+        	document.getElementById("menu-bar").classList.add("show");
+      		}, 1000);
+    		}, 3000);		
+ 	 		}
+		}
+
+		function createSplash(x, y) {
+  		for (let i = 0; i < 5; i++) { // 5粒ぐらい飛ばす
+    		const splash = document.createElement("div");
+    		splash.classList.add("splash");
+
+				// 粒の大きさ：大きめ（8px〜18px）
+    		const size = 8 + Math.random() * 10;
+    		splash.style.width = size + "px";
+    		splash.style.height = size + "px";
+
+    		// ランダム方向と距離：遠くまで（80〜150px）
+    		const angle = Math.random() * 2 * Math.PI;
+    		const distance = 80 + Math.random() * 70; //遠くまで
+    		const dx = Math.cos(angle) * distance + "px";
+    		const dy = Math.sin(angle) * distance + "px";
+
+    		splash.style.setProperty("--x", dx);
+    		splash.style.setProperty("--y", dy);
+    		splash.style.left = x + "px";
+    		splash.style.top = y + "px";
+
+    		document.body.appendChild(splash);
+				// アニメ後に削除
+    		splash.addEventListener("animationend", () => splash.remove());
+  		}
+		}
+
+		function updateBackground() {
+			const poppedCount = bubbles.filter(b => b.classList.contains('popped')).length;
+  		const ratio = poppedCount / bubbles.length;
+
+  		const targetTop = {
+    		r: startTop.r + (endTop.r - startTop.r) * ratio,
+    		g: startTop.g + (endTop.g - startTop.g) * ratio,
+    		b: startTop.b + (endTop.b - startTop.b) * ratio
+  		};
+
+  		const targetBottom = {
+    		r: startBottom.r + (endBottom.r - startBottom.r) * ratio,
+    		g: startBottom.g + (endBottom.g - startBottom.g) * ratio,
+    		b: startBottom.b + (endBottom.b - startBottom.b) * ratio
+  		};
+
+  		function animate() {
+    	// 少しずつ近づける
+    		currentTop.r    += (targetTop.r - currentTop.r) * 0.05;
+    		currentTop.g    += (targetTop.g - currentTop.g) * 0.05;
+    		currentTop.b    += (targetTop.b - currentTop.b) * 0.05;
+
+    		currentBottom.r += (targetBottom.r - currentBottom.r) * 0.05;
+    		currentBottom.g += (targetBottom.g - currentBottom.g) * 0.05;
+    		currentBottom.b += (targetBottom.b - currentBottom.b) * 0.05;
+
+    	// 背景グラデーションに反映
+    		document.body.style.background =
+      		`	linear-gradient(to bottom, rgb(${Math.round(currentTop.r)},${Math.round(currentTop.g)},${Math.round(currentTop.b)}), 
+                        rgb(${Math.round(currentBottom.r)},${Math.round(currentBottom.g)},${Math.round(currentBottom.b)}))`;
+
+    	// まだ差があれば継続
+    		if (Math.abs(targetTop.r - currentTop.r) > 1 ||
+        	Math.abs(targetTop.g - currentTop.g) > 1 ||
+        	Math.abs(targetTop.b - currentTop.b) > 1 ||
+        	Math.abs(targetBottom.r - currentBottom.r) > 1 ||
+        	Math.abs(targetBottom.g - currentBottom.g) > 1 ||
+        	Math.abs(targetBottom.b - currentBottom.b) > 1) {
+      	requestAnimationFrame(animate);
+    		}
+  		}
+  		requestAnimationFrame(animate);
+		}
+		//最後のキラッ作成
+		function createShine(x, y) {
+  		const shine = document.createElement("div");
+  		shine.classList.add("shine");
+  		shine.style.left = `${x - 15}px`; // 中心を合わせる
+  		shine.style.top = `${y - 15}px`;
+  		document.body.appendChild(shine);
+
+  		shine.addEventListener("animationend", () => shine.remove());
+		}
+
+  </script>
+</body>
+<footer style="text-align:center; margin-top:40px; padding:10px; font-size:0.9em; color:#aaa;">
+  &copy; 2025 Choco's clover<span style="opacity:0.5;">🍀</span>
+</footer>
+</html>

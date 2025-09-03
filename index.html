@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+	<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>PuchiPuchi</title>
+	<!-- Favicon -->
+	<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #e0ffe0, #fff5e0);
+      font-family: sans-serif;
+      flex-direction: column;
+      text-align: center;
+      overflow: hidden; /* 漂う要素がはみ出さないように */
+      position: relative;
+    }
+    h1 {
+      margin-bottom: 40px;
+      z-index: 10;
+      position: relative;
+			font-family: 'Pacifico', cursive;  /* 可愛いロゴっぽいフォント */
+  		font-size: 3em;
+			color: #cfa0ff;
+  		text-shadow: 2px 2px 0px #fff,     /* 白い縁取り */
+               4px 4px 8px rgba(0,0,0,0.2); /* ほんのり影 */
+  		letter-spacing: 2px;               /* ロゴ感を出す間隔 */
+    }
+		h1 span {
+  		/*?だけベリー系に */
+			color: #d080a0;
+		}
+
+    .menu {
+      display: flex;
+      gap: 60px;
+      z-index: 10;
+      position: relative;
+    }
+    .game-option {
+      width: 150px;
+      height: 150px;
+      border-radius: 20px;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 4px 6px 12px rgba(0,0,0,0.2);
+			-webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .game-option:hover {
+      transform: scale(1.1);
+      box-shadow: 6px 8px 16px rgba(0,0,0,0.3);
+		}
+	
+    .clover {
+      background-image: url("yotsuba.png"); /* クローバーのアイコン */
+    }
+    .candy {
+      background-image: url("orange.png"); /* フルーツのアイコン */
+    }
+    .label {
+      margin-top: 10px;
+      font-size: 1.2em;
+			/*font-family: 'Pacifico', cursive;*/
+			font-family: 'Fredoka One', sans-serif;
+			/*font-weight: bold;*/
+    }
+
+		#clover-label {color: #009966;}
+
+		#candy-label {color: #ff6633;}
+
+    /* --- 背景の漂う要素 --- */
+    .float-item {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      opacity: 0.7;
+      animation: floatUp linear infinite;
+    }
+		/*
+    @keyframes floatUp {
+      from {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0.8;
+      }
+      to {
+        transform: translateY(-120px) rotate(360deg);
+        opacity: 0;
+      }
+    }*/
+
+		@keyframes floatUp {
+  		from {
+    		transform: translateY(var(--startY)) rotate(0deg);
+    		opacity: 0.8;
+  		}
+  		to {
+    		transform: translateY(-120px) rotate(360deg);
+    		opacity: 0;
+  		}
+		}
+		
+		/* メニュー画面用レスポンシブ */
+		@media (max-width: 600px) {
+
+  	/* メニューボタンを縦並びにする */
+  	.menu {
+    	display: flex;
+    	flex-direction: column;
+    	align-items: center;
+    	gap: 16px; /* ボタン間隔を広めに */
+  		}
+
+  	/* ゲームオプションのサイズを少し小さくする */
+  	.menu .game-option {
+    	width: 110px;  /* 小さめに */
+    	height: 110px;
+  		}
+		.menu .game-option {
+    	position: relative;
+    	overflow: hidden; /* 光がはみ出ないように */
+  		}
+
+  	.menu .game-option::after {
+    	content: "";
+    	position: absolute;
+    	top: 0;
+    	left: -75%;
+    	width: 50%;
+    	height: 100%;
+    	background: linear-gradient(
+      	120deg,
+      	rgba(255,255,255,0) 0%,
+     		rgba(255,255,255,0.4) 50%,
+      	rgba(255,255,255,0) 100%
+    	);
+    	animation: shine 1.5s ease; /* ← ロード時に1回だけ走る */
+  		}
+
+  		@keyframes shine {
+   	 	0%   { left: -75%; }
+    	100% { left: 125%; }
+  		}
+	
+		/* ラベル文字サイズ調整 */
+  	.menu .label {
+    	font-size: 1em; /* 少し小さく */
+  		}
+
+  	/* タイトルサイズ調整 */
+  	h1 {
+    	font-size: 2.5em; /* 小さめにして画面に収める */
+    	text-align: center;
+  		}
+		}
+
+  </style>
+</head>
+<body>
+  <h1>PuchiPuchi<span>?</span></h1>
+  <div class="menu">
+    <div>
+      <div class="game-option clover" onclick="location.href='clover.html'"></div>
+      <div id="clover-label" class="label">Clover</div>
+    </div>
+    <div>
+      <div class="game-option candy" onclick="location.href='candy.html'"></div>
+      <div id="candy-label" class="label">Candy</div>
+    </div>
+  </div>
+
+  <script>
+    const images = ["yotsuba.png", "orange.png", "mitsuba.png", "lemon.png"];
+    const body = document.body;
+
+    function createFloatItem() {
+      const item = document.createElement("div");
+      item.classList.add("float-item");
+
+      // ランダムでクローバー or フルーツ
+      const img = images[Math.floor(Math.random() * images.length)];
+      item.style.backgroundImage = `url(${img})`;
+
+      // 横位置ランダム
+     /* item.style.left = Math.random() * window.innerWidth + "px";*/
+			item.style.left = Math.round(Math.random() * window.innerWidth) + "px";
+			
+			// 縦の開始位置を整数化
+  		const startY = Math.round(window.innerHeight);
+  		item.style.setProperty("--startY", `${startY}px`);
+
+      // アニメーション時間をランダム
+      const duration = 8 + Math.random() * 5; // 8〜13秒
+      item.style.animationDuration = duration + "s";
+
+      body.appendChild(item);
+
+      // アニメーション終了後に削除
+      item.addEventListener("animationend", () => item.remove());
+    }
+
+    // 一定間隔で新しいアイテムを追加
+    setInterval(createFloatItem, 1000);
+  
+	</script>
+</body>
+<footer style="text-align:center; margin-top:40px; padding:10px; font-size:0.9em; color:#aaa;">
+  &copy; 2025 Choco's puchipuchi
+</footer>
+</html>
