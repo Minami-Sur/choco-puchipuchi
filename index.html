@@ -30,7 +30,7 @@
       margin-bottom: 40px;
       z-index: 10;
       position: relative;
-			font-family: 'Pacifico', cursive;  /* 可愛いロゴっぽいフォント */
+			font-family: 'Pacifico', cursive;  /* 可愛いロゴっぽく */
   		font-size: 3em;
 			color: #cfa0ff;
   		text-shadow: 2px 2px 0px #fff,     /* 白い縁取り */
@@ -82,7 +82,7 @@
 
 		#candy-label {color: #ff6633;}
 
-    /* --- 背景の漂う要素 --- */
+    /* 背景の漂う要素 */
     .float-item {
       position: absolute;
       width: 40px;
@@ -92,7 +92,7 @@
       opacity: 0.7;
       animation: floatUp linear infinite;
     }
-		/*
+		/*元
     @keyframes floatUp {
       from {
         transform: translateY(100vh) rotate(0deg);
@@ -149,7 +149,7 @@
      		rgba(255,255,255,0.4) 50%,
       	rgba(255,255,255,0) 100%
     	);
-    	animation: shine 1.5s ease; /* ← ロード時に1回だけ走る */
+    	animation: shine 1.5s ease; /* ロード時に1回だけ走る */
   		}
 
   		@keyframes shine {
@@ -164,7 +164,8 @@
 
   	/* タイトルサイズ調整 */
   	h1 {
-    	font-size: 2.5em; /* 小さめにして画面に収める */
+			margin-top: -10px;
+    	font-size: 2.5em; /* 小さめ */
     	text-align: center;
   		}
 		}
@@ -214,7 +215,7 @@
       item.addEventListener("animationend", () => item.remove());
     }
 
-    // 一定間隔で新しいアイテムを追加
+    // 一秒間隔で新しいアイテムを追加
     setInterval(createFloatItem, 1000);
   
 	</script>

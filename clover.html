@@ -57,7 +57,7 @@
 			pointer-events: none;
   		animation: splashMove 1.2s ease-out forwards;
 		} 
-		/* 放物線っぽく上がって落ちる */
+		/* 放物線っぽく */
 		@keyframes splashMove {
   		0% {
     			transform: translate(0, 0) scale(1);
@@ -73,7 +73,7 @@
   			}
 		}
 
-		/* 最後のキラッのスタイル */
+		/* 最後のキラッ*/
 		.shine {
   				position: absolute;
   				width: 30px;
@@ -100,7 +100,7 @@
   			}
 		}
 
-		/* 下中央のメニューバー */
+		/* メニューバー */
 		#menu-bar {
   				display: flex;
   				gap: 12px;
@@ -141,12 +141,12 @@
 		/* レスポンシブ　*/
 		@media (max-width: 600px) {
   		.grid {
-    			grid-template-columns: repeat(4, 54px);
-    			gap: 8px;
+    			grid-template-columns: repeat(4, 65px);/*4,54*/
+    			gap: 12px;/*8*/
   		}
   		.bubble {
-    			width: 54px;
-    			height: 54px; /* 正方形を維持 */
+    			width: 65px;
+    			height: 65px; /* 54 正方形を維持 */
   		}
 		}
 
@@ -161,7 +161,7 @@
   <button id="menu-btn">⌂ メニューへ</button>
 	</div>
 
-  <!-- 効果音ファイルを読み込み -->
+  <!-- 効果音ファイル -->
   <audio id="pop-sound" src="Water_01.mp3"></audio>
 	<audio id="special-sound" src="Water_02.mp3"></audio>
 	<audio id="final-sound" src="Water_High.mp3"></audio>
@@ -196,7 +196,7 @@
 
 		let currentTop    = { ...startTop };
 		let currentBottom = { ...startBottom };
-		// 朝の水色（グラデーション上空と地平線で別にしておくと自然）
+		// 朝の水色（グラデーション上空と地平線）
 		const endTop    = { r: 179, g: 229, b: 255 };  // 上空（水色）
 		const endBottom = { r: 255, g: 255, b: 255 };  // 地平線（白に近い）
 
@@ -222,7 +222,7 @@
 						// 背景更新
 					updateBackground();
 
-					// ★ 四つ葉なら特別サウンド
+					// 四つ葉なら特別サウンド
     			if (bubble.classList.contains('four-leaf')) {
       			specialSound.currentTime = 0;
       			specialSound.play();
@@ -282,7 +282,7 @@
     		finalSound.play();
     	// 最後に押したバブルのインデックスを取得
 				const index = bubbles.indexOf(lastBubble);
-    		const cols = 4; // グリッド列数（ここはCSSと合わせる）
+    		const cols = 4; // グリッド列数（CSSと合わせる）
 				const totalBubbles = bubbles.length;
 				const neighbors = getNeighbors(index, cols, totalBubbles);
 
@@ -293,7 +293,7 @@
     					createShine(rect.left + rect.width / 2, rect.top + rect.height / 2);
   				}
 				}
-				// ここでメッセージを消してメニューバーを出す
+				// メッセージを消してメニューバーを出す
     		setTimeout(() => {
       		message.classList.add("fade-out");
       	setTimeout(() => {
