@@ -18,7 +18,9 @@ Choco's puchipuchi は、シンプルでかわいいミニゲーム集です。
 
 ## 音源・効果音クレジット
 - 効果音: `Water_01.mp3`, `Water_02.mp3`, `Water_High.mp3` 
-  提供: BGM by OtoLogic(CC BY 4.0) OtoLogic(https://otologic.jp)
+  提供: BGM by OtoLogic(CC BY 4.0)
+        OtoLogic(https://otologic.jp)
+  
   使用条件: クレジット表記必須
 
 ---
