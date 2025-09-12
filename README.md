@@ -1,5 +1,5 @@
 # choco-puchipuchi
-easy puchipuchi game
+Easy puchipuchi game
 
 ---
 
